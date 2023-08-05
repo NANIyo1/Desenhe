@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Área de Desenho</title>
+</head>
+<body>
+    <h1>Área de Desenho</h1>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <br>
+    <button id="clearButton">Limpar</button>
+    <br>
+    <label for="colorPicker">Cor do Pincel:</label>
+    <input type="color" id="colorPicker">
+    <br>
+    <label for="brushSize">Tamanho do Pincel:</label>
+    <input type="range" id="brushSize" min="1" max="20" value="5">
+    <br>
+    <p>@anonimonani</p>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const clearButton = document.getElementById('clearButton');
+        const colorPicker = document.getElementById('colorPicker');
+        const brushSize = document.getElementById('brushSize');
+
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchmove', draw);
+
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        clearButton.addEventListener('click', clearCanvas);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSavedDrawings();
+        });
+
+        function startDrawing(e) {
+            drawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+
+            const x = e.clientX || e.touches[0].clientX;
+            const y = e.clientY || e.touches[0].clientY;
+
+            ctx.lineWidth = brushSize.value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = colorPicker.value;
+
+            ctx.lineTo(x - canvas.getBoundingClientRect().left, y - canvas.getBoundingClientRect().top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x - canvas.getBoundingClientRect().left, y - canvas.getBoundingClientRect().top);
+        }
+
+        function stopDrawing() {
+            drawing = false;
+            ctx.beginPath();
+            saveDrawingToLocalStorage();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveDrawingToLocalStorage();
+        }
+
+        function loadSavedDrawings() {
+            const savedDrawings = localStorage.getItem('savedDrawings');
+            if (savedDrawings) {
+                const drawings = JSON.parse(savedDrawings);
+                drawings.forEach(drawing => {
+                    drawSavedDrawing(drawing);
+                });
+            }
+        }
+
+        function drawSavedDrawing(data) {
+            const img = new Image();
+            img.src = data;
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+            };
+        }
+
+        function saveDrawingToLocalStorage() {
+            const drawingData = canvas.toDataURL();
+            const savedDrawings = localStorage.getItem('savedDrawings') || '[]';
+            const drawings = JSON.parse(savedDrawings);
+            drawings.push(drawingData);
+            localStorage.setItem('savedDrawings', JSON.stringify(drawings));
+        }
+    </script>
+</body>
+</html>
